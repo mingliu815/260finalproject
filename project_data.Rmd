@@ -65,13 +65,13 @@ rm(u)
 lapply(business, class)
 lapply(review,class)
 
-business$Restaurants = "Restaurants" %in% business$categories
+#business$Restaurants = "Restaurants" %in% business$categories
 
 # Restaurants=True or False, then we can delete the categories and other columns(attributes,hours,neighborhoods) to have a data_frame to filter 
 
 
 
-bus <- business %>% filter("Restaurants" %in% categories)
+#bus <- business %>% filter("Restaurants" %in% categories)
 # cannot filter? ,list in dataframe 
 #Error: data_frames can only contain 1d atomic vectors and lists
 
@@ -106,10 +106,82 @@ review <- review[review$review_id %in% review_restaurant_id,]
 #Filter business by business_id
 business <-business[business$business_id %in% business_restaurant_id,]
 
+table(business$state)
+
 ```
 
 
-```{r}
+```{r,warning=F}
+#AZ,NV, NC,QC (states with more than 2000 restaurants)
+
+business_restaurant_index2<- which(business$state %in% c("AZ","NV","NC","QC"))
+
+business_state_id <- business$business_id[business_restaurant_index2] 
+
+business <-business[business$business_id %in% business_state_id,]
+
+
+# Mexican, fast food, American, Asian, Europeans, Latin Americans
+
+
+business$Mexican=NA
+
+business$ff=NA
+
+business$American=NA
+
+business$Asian=NA
+
+business$European=NA
+
+ff <- data.frame()
+
+for (i in 1:length(business$categories)){
+  ff<-rbind(ff,ifelse("Fast Food" %in% business$categories[[i]],1,0))
+}
+
+
+
+for (i in 1:length(business$categories)){
+  ff["Mexican"]<-rbind(ff,ifelse("Mexican" %in% business$categories[[i]],1,0))
+}
+
+
+
+for (i in 1:length(business$categories)){
+  ff["Asian"]<-rbind(ff,ifelse(c("Chinese","Japanese","Asian Fusion","Thai","Indian","Taiwanese","Vietnamese","Korean") %in% business$categories[[i]],1,0))
+}
+
+
+for (i in 1:length(business$categories)){
+  ff["American"]<-rbind(ff,ifelse(c("American (New)","American (Tradiitional)") %in% business$categories[[i]],1,0))
+}
+
+for (i in 1:length(business$categories)){
+  ff["European"]<-rbind(ff,ifelse(c("Italian","French","Irish","Greek","Austrian","British","German") %in% business$categories[[i]],1,0))
+}
+
+business$ff <- ff[1]
+business$Asian <-ff["Asian"]
+business$Mexican <-ff["Mexican"]
+business$American <-ff["American"]
+business$European <-ff["European"]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```
 
