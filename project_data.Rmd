@@ -205,7 +205,7 @@ tempA$parking <- ifelse(business$attributes$Parking$garage==TRUE|business$attrib
 tempA <- tempA %>% replace_na(list(reservation=0, delivery=0, card=0, hh=0, takeout=0, drivethru=0, wifi=0, smoking=0, parking=0))
 
 #Sum up to features
-tempA <- mutate(tempA, feature = reservation + delivery + card + hh + takeout + drivethru+wifi+smoking+parking)
+tempA <- mutate(tempA, feature = reservation + delivery + card + hh + takeout + drivethru + wifi + smoking + parking)
 
 business$feature <- tempA$feature
 
