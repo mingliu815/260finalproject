@@ -48,15 +48,15 @@ library(dplyr)
 library(tidyr)
 
 #b<-1
-y<-load("business.RData")
+y<-load("/Users/mingliu/Downloads/business.RData")
 #str(b)
 #rm(b)
 rm(y)
 
-r <-load("review.RData")
+r <-load("/Users/mingliu/Downloads/review.RData")
 rm(r)
 
-u<-load("user.RData")
+u<-load("/Users/mingliu/Downloads/user.RData")
 rm(u)
 ```
 
@@ -113,25 +113,16 @@ table(business$state)
 
 ```{r,warning=F}
 #AZ,NV, NC,QC (states with more than 2000 restaurants)
-
 business_restaurant_index2<- which(business$state %in% c("AZ","NV","NC","QC"))
-
 business_state_id <- business$business_id[business_restaurant_index2] 
-
 business <-business[business$business_id %in% business_state_id,]
-
 
 # Mexican, fast food, American, Asian, Europeans, Latin Americans
 
-
 business$Mexican=NA
-
 business$ff=NA
-
 business$American=NA
-
 business$Asian=NA
-
 business$European=NA
 
 ff <- data.frame()
@@ -168,20 +159,55 @@ business$American <-ff["American"]
 business$European <-ff["European"]
 
 
+#Attributes: wifi, smoking, reservation, delivery, parking, credit card, happy hour, take out, drive thru
+business$feature <- NA
 
+#save all feature as a seperate data frame
+tempA <- data.frame()
 
+#reservation- false 11979, true 6042
+tempA <- ifelse(business$attributes$`Takes Reservations`==TRUE,1,0) %>% as.data.frame()
+colnames(tempA)[1]<- "reservation"
 
+#delivery- false 14543, true 3364
+tempA$delivery <- NA
+tempA$delivery <- ifelse(business$attributes$Delivery==TRUE,1,0)
 
+#credit card- false 397, true 18433
+tempA$card <- NA
+tempA$card <- ifelse(business$attributes$`Accepts Credit Cards`==TRUE,1,0)
 
+#happy hour- false 238, true 1569
+tempA$hh <- NA
+tempA$hh <- ifelse(business$attributes$`Happy Hour`==TRUE,1,0) ##A lot NA, may remove
 
+#take out- false 1385, true 16969
+tempA$takeout <- NA
+tempA$takeout <- ifelse(business$attributes$`Take-out`==TRUE,1,0)
 
+#drive thru- false 1486, true 1387
+tempA$drivethru <- NA
+tempA$drivethru <- ifelse(business$attributes$`Drive-Thru`==TRUE,1,0) ##A lot NA, may remove
 
+#Wifi- free 5224, no 8511, paid 118 - free+paid=1/no=0
+tempA$wifi <- NA
+tempA$wifi <- ifelse(business$attributes$`Wi-Fi`=="no",0,1) ##A lot NA
 
+#smoking- no 636, outdoor 783, yes 239 - outdoor+yes=1/no=0
+tempA$smoking <- NA
+tempA$smoking <- ifelse(business$attributes$Smoking=="no",0,1) ##A lot NA
 
+#parking- garage, street, validated, lot, valet - anyone returns true will be 1/otherwise 0
+tempA$parking <- NA
+tempA$parking <- ifelse(business$attributes$Parking$garage==TRUE|business$attributes$Parking$street==TRUE|business$attributes$Parking$validated==TRUE|business$attributes$Parking$lot==TRUE|business$attributes$Parking$valet==TRUE,1,0)
 
+#Deal with NAs (replace NA to 0)??
+tempA <- tempA %>% replace_na(list(reservation=0, delivery=0, card=0, hh=0, takeout=0, drivethru=0, wifi=0, smoking=0, parking=0))
 
+#Sum up to features
+tempA <- mutate(tempA, feature = reservation + delivery + card + hh + takeout + drivethru+wifi+smoking+parking)
 
-
+business$feature <- tempA$feature
 
 ```
 
