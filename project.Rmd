@@ -48,10 +48,10 @@ library(dplyr)
 library(tidyr)
 
 
-y<-load("business.RData")
+y<-load("/Users/mingliu/Downloads/business.RData")
 rm(y)
 
-r <-load("review.RData")
+r <-load("/Users/mingliu/Downloads/review.RData")
 rm(r)
 
 u<-load("user.RData")
@@ -95,7 +95,7 @@ business <-business[business$business_id %in% business_restaurant_id,]
 # Mexican, fast food, American, Asian, Europeans, Latin Americans
 
 business$Mexican=NA
-business$ff=NA
+business$Fastfood=NA
 business$American=NA
 business$Asian=NA
 business$European=NA
@@ -112,7 +112,6 @@ for (i in 1:length(business$categories)){
 }
 
 
-
 for (i in 1:length(business$categories)){
   ff["Asian"]<-rbind(ff,ifelse(c("Chinese","Japanese","Asian Fusion","Thai","Indian","Taiwanese","Vietnamese","Korean") %in% business$categories[[i]],1,0))
 }
@@ -126,7 +125,7 @@ for (i in 1:length(business$categories)){
   ff["European"]<-rbind(ff,ifelse(c("Italian","French","Irish","Greek","Austrian","British","German") %in% business$categories[[i]],1,0))
 }
 
-business$ff <- ff[1]
+business$Fastfood <- ff[1]
 business$Asian <-ff["Asian"]
 business$Mexican <-ff["Mexican"]
 business$American <-ff["American"]
@@ -212,7 +211,7 @@ business_data <- business%>%
 #add other column of types data.frame to clean up the data.frame inside a data.frame
 business_data<-business_data%>%mutate(Mexican=business$Mexican$Mexican,
                                       American=business$American$American,
-                                      fast_food=business$ff$X0,
+                                      fast_food=business$Fastfood$X0,
                                       European=business$European$European,
                                       Asian=business$Asian$Asian)
 
@@ -221,9 +220,9 @@ business_data <- left_join(business_data,r,by="business_id")
 business_data <- business_data%>%mutate(avg_star=round(avg_star,digits=1))
 
 #separate the zip code
-business_data <- business_data %>% separate(full_address, c("address", "state_zc"), sep = ",")
-#business_data <- business_data %>% separate(state_zc, c("st", "zip_code"), sep = "\\ ")
-# how to separate state by zip code?
+business_data <- business_data %>% separate(full_address, c("address", "state_zc"), sep = ", ")
+business_data <- business_data %>% separate(state_zc, c("st", "zip_code"), sep = "\\ ")
+business_data <- business_data %>% select(-st)
 
 ```
 
