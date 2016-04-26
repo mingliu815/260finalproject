@@ -9,7 +9,7 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 ```{r}
 install.packages("jsonlite")
-#library(jsonlite)
+library(jsonlite)
 require(jsonlite)
 
 business.file <- 'C:/Users/Phuong/Documents/R/Bio 260/yelp_dataset_challenge_academic_dataset/yelp_academic_dataset_business.json'
@@ -103,12 +103,12 @@ business$European=NA
 ff <- data.frame()
 
 for (i in 1:length(business$categories)){
-  ff<-rbind(ff,ifelse("Fast Food" %in% business$categories[[i]],1,0))
+  ff<-rbind(ff,ifelse("Fast Food" %in% business$categories[[i]],1,0)) %>% as.data.frame()
 }
-
+colnames(ff)[1]<- "Fastfood"
 
 for (i in 1:length(business$categories)){
-  ff["Mexican"]<-rbind(ff,ifelse("Mexican" %in% business$categories[[i]],1,0))
+  ff["Mexican"] <- rbind(ff, ifelse("Mexican" %in% business$categories[[i]],1,0))
 }
 
 
@@ -125,11 +125,11 @@ for (i in 1:length(business$categories)){
   ff["European"]<-rbind(ff,ifelse(c("Italian","French","Irish","Greek","Austrian","British","German") %in% business$categories[[i]],1,0))
 }
 
-business$Fastfood <- ff[1]
-business$Asian <-ff["Asian"]
-business$Mexican <-ff["Mexican"]
-business$American <-ff["American"]
-business$European <-ff["European"]
+business$Fastfood <- ff$Fastfood
+business$Asian <-ff$Asian
+business$Mexican <-ff$Mexican
+business$American <-ff$American
+business$European <-ff$European
 ```
 
 ```{r}
@@ -209,11 +209,11 @@ business_data <- business%>%
          state,stars,feature)
 
 #add other column of types data.frame to clean up the data.frame inside a data.frame
-business_data<-business_data%>%mutate(Mexican=business$Mexican$Mexican,
-                                      American=business$American$American,
-                                      fast_food=business$Fastfood$X0,
-                                      European=business$European$European,
-                                      Asian=business$Asian$Asian)
+business_data<-business_data%>%mutate(Mexican=business$Mexican,
+                                      American=business$American,
+                                      fast_food=business$Fastfood,
+                                      European=business$European,
+                                      Asian=business$Asian)
 
 #left_join the review columns with the business file 
 business_data <- left_join(business_data,r,by="business_id")
