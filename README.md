@@ -1,6 +1,6 @@
 # 260finalproject
 
-Yelp Restaurant Success Prediction
+###Yelp Restaurant Success Prediction
 
-Elena Phuong Dang, Shengyao Jiang, Ming Liu
-#Biostatistics 260, Harvard T.H. Chan School of Public Health
+###Elena Phuong Dang, Shengyao Jiang, Ming Liu
+###Biostatistics 260, Harvard T.H. Chan School of Public Health
