@@ -450,6 +450,7 @@ fit_rr<-randomForest(stars~.,data=training1)
 pred_rr<-predict(fit_rr,newdata=testing1)
 ```
 
+### Comparing all the models
 ```{r}
 RMSE <- function(true_ratings, predicted_ratings){
     sqrt(mean((true_ratings - predicted_ratings)^2))
