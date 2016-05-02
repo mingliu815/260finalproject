@@ -12,10 +12,10 @@ Load our RData files.
 library(dplyr)
 library(tidyr)
 
-y<-load("business.RData")
+y<-load("/Users/mingliu/Downloads/business.RData")
 rm(y)
 
-r <-load("review.RData")
+r <-load("/Users/mingliu/Downloads/review.RData")
 rm(r)
 ```
 
@@ -240,16 +240,16 @@ pal2 <- pal2[-(1:2)]
 wordcloud(common_5star$word, common_5star$n, colors = pal2, scale=c(12,.3))
 
 #review_count vs. stars/ positivity vs. stars
-ggplot2.histogram(data=business_data1, xName='positivity',
+ggplot2.histogram(data=business_data, xName='positivity',
         groupName='stars', legendPosition="top",
         alpha=0.5, addDensityCurve=TRUE, scale=density) + facet_wrap(~state)
 
 ggplot2.barplot(data=business_data, xName='stars',yName='log10(review_count)', groupName = 'stars') + facet_wrap(~state)
 
 #Max number of features vs. stars
-max <- business_data %>% group_by(stars) %>% summarise(maxFeature = max(feature))
-ggplot2.lineplot(data=max, xName='stars', yName='maxFeature', groupName = 'stars')
-ggplot(max, aes(stars, maxFeature, color=stars)) + geom_point() + geom_line()
+# max <- business_data %>% group_by(stars) %>% summarise(maxFeature = max(feature))
+# ggplot2.lineplot(data=max, xName='stars', yName='maxFeature', groupName = 'stars')
+# ggplot(max, aes(stars, maxFeature, color=stars)) + geom_point() + geom_line()
 
 
 #http://colorbrewer2.org/ 
@@ -262,7 +262,7 @@ We divided the data into training and testing sets, with 80% of the data for tra
 
 ```{r}
 # cross validation
-library(caret)
+#library(caret)
 #delete the orginal state column
 business_data <- business_data %>% select(-c(state))
 
@@ -287,30 +287,32 @@ res_lm1 <- training%>%
 
 summary(res_lm1)
 
-#remove PA
+#remove European
 res_lm2 <- training%>%
-  lm(stars ~ positivity + review_count + feature + Mexican + American + Fastfood + European + Asian + votes_funny + votes_useful + votes_cool, data = .)
+  lm(stars ~ positivity + review_count + reservation + delivery + card +  takeout + parking+ Mexican + American + Fastfood + Asian + votes_funny + votes_useful + votes_cool + PA, data = .)
 
 summary(res_lm2) 
 
-#remove votes_usefull
+#remove PA
 res_lm3 <- training%>%
-  lm(stars ~positivity + review_count + feature + Mexican + American + Fastfood + European+ Asian + votes_funny + votes_cool, data = .)
+  lm(stars ~ positivity + review_count + reservation + delivery + card +  takeout + parking+ Mexican + American + Fastfood + Asian + votes_funny + votes_useful + votes_cool, data = .)
 
-summary(res_lm3) #remove fast food 
-
-#remove European
-res_lm4 <- training%>%
-  lm(stars ~positivity + review_count + feature  + Mexican + American + Fastfood+ Asian + votes_funny + votes_cool, data = .)
-summary(res_lm4) #remove feature
+summary(res_lm3) 
 
 #remove Mexican
+res_lm4 <- training%>%
+  lm(stars ~ positivity + review_count + reservation + delivery + card +  takeout + parking+ American + Fastfood + Asian + votes_funny + votes_useful + votes_cool, data = .)
+
+summary(res_lm4) 
+
+#remove Reservation
 res_lm5 <- training%>%
-  lm(stars ~positivity + review_count + feature + American + Fastfood+ Asian + votes_funny + votes_cool, data = .)
-summary(res_lm5)
+  lm(stars ~ positivity + review_count + delivery + card +  takeout + parking+ American + Fastfood + Asian + votes_funny + votes_useful + votes_cool, data = .)
+
+summary(res_lm5) 
 
 #RMSE = SD/(1-R^2)
-rmse_lm <- 0.6164*sqrt(1-0.2795^2) #0.59
+rmse_lm <- 0.6114*sqrt(1-0.3027) #0.51
 
 #backward selection, remove the high non-significant, and then do again until getting all significant
 ```
@@ -320,35 +322,35 @@ rmse_lm <- 0.6164*sqrt(1-0.2795^2) #0.59
 ```{r}
 # GLM (Logistic Regression)
 
-fit1 <- glm(y~., data=mutate(training,
+fit1 <- glm(y~., data=mutate(training %>% select(-c(European, PA, Mexican, reservation)),
                                    y=stars==1),family="binomial")
-fit2 <- glm(y~., data=mutate(training,
+fit2 <- glm(y~., data=mutate(training %>% select(-c(European, PA, Mexican, reservation)),
                                    y=stars==1.5),family="binomial")
-fit3 <- glm(y~., data=mutate(training,
+fit3 <- glm(y~., data=mutate(training %>% select(-c(European, PA, Mexican, reservation)),
                                    y=stars==2),family="binomial")
-fit4 <- glm(y~., data=mutate(training,
+fit4 <- glm(y~., data=mutate(training %>% select(-c(European, PA, Mexican, reservation)),
                                    y=stars==2.5),family="binomial")
-fit5<- glm(y~., data=mutate(training,
+fit5<- glm(y~., data=mutate(training %>% select(-c(European, PA, Mexican, reservation)),
                                    y=stars==3),family="binomial")
-fit6 <- glm(y~., data=mutate(training,
+fit6 <- glm(y~., data=mutate(training %>% select(-c(European, PA, Mexican, reservation)),
                                    y=stars==3.5),family="binomial")
-fit7 <- glm(y~., data=mutate(training,
+fit7 <- glm(y~., data=mutate(training %>% select(-c(European, PA, Mexican, reservation)),
                                    y=stars==4),family="binomial")
-fit8 <- glm(y~., data=mutate(training,
+fit8 <- glm(y~., data=mutate(training %>% select(-c(European, PA, Mexican, reservation)),
                                    y=stars==4.5),family="binomial")
-fit9 <- glm(y~., data=mutate(training,
+fit9 <- glm(y~., data=mutate(training %>% select(-c(European, PA, Mexican, reservation)),
                                    y=stars==5),family="binomial")
 
 
-f_hat1 <- predict(fit1, newdata = testing, type = "response")
-f_hat2 <- predict(fit2, newdata = testing, type ="response")
-f_hat3 <- predict(fit3, newdata = testing, type = "response")
-f_hat4 <- predict(fit4, newdata = testing, type ="response")
-f_hat5 <- predict(fit5, newdata = testing, type = "response")
-f_hat6 <- predict(fit6, newdata = testing, type ="response")
-f_hat7 <- predict(fit7, newdata = testing, type = "response")
-f_hat8 <- predict(fit8, newdata = testing, type ="response")
-f_hat9 <- predict(fit9, newdata = testing, type = "response")
+f_hat1 <- predict(fit1, newdata = testing %>% select(-c(European, PA, Mexican, reservation)), type = "response")
+f_hat2 <- predict(fit2, newdata = testing %>% select(-c(European, PA, Mexican, reservation)), type ="response")
+f_hat3 <- predict(fit3, newdata = testing %>% select(-c(European, PA, Mexican, reservation)), type = "response")
+f_hat4 <- predict(fit4, newdata = testing %>% select(-c(European, PA, Mexican, reservation)), type ="response")
+f_hat5 <- predict(fit5, newdata = testing %>% select(-c(European, PA, Mexican, reservation)), type = "response")
+f_hat6 <- predict(fit6, newdata = testing %>% select(-c(European, PA, Mexican, reservation)), type ="response")
+f_hat7 <- predict(fit7, newdata = testing %>% select(-c(European, PA, Mexican, reservation)), type = "response")
+f_hat8 <- predict(fit8, newdata = testing %>% select(-c(European, PA, Mexican, reservation)), type ="response")
+f_hat9 <- predict(fit9, newdata = testing %>% select(-c(European, PA, Mexican, reservation)), type = "response")
  
 
 pred_glm <- 
@@ -359,7 +361,7 @@ pred_glm <-
 ```{r}
 #KNN
 res <- train(as.factor(stars) ~ .,
-             data = training,
+             data = training %>% select(-c(European, PA, Mexican, reservation)),
              method = "knn",
              trControl = control,
              tuneLength = 1, # How fine a mesh to go on grid
@@ -374,8 +376,8 @@ res$results %>%
   geom_point() + geom_errorbar()
 res
 # fit with k=19
-fit <- knn3(stars~., data=training, k=19)
-f_hat <- predict(fit, newdata = testing)
+fit <- knn3(stars~., data=training %>% select(-c(European, PA, Mexican, reservation)), k=19)
+f_hat <- predict(fit, newdata = testing %>% select(-c(European, PA, Mexican, reservation)))
 pred_knn_19 <- apply(f_hat,1,which.max)
 ```
 
@@ -386,13 +388,13 @@ pred_knn_19 <- apply(f_hat,1,which.max)
 #install.packages("e1071")
 
 library(e1071)
-fit_svm <- svm(stars~.,data=training) 
-pred_svm <-predict(fit_svm,newdata=testing)
+fit_svm <- svm(stars~.,data=training %>% select(-c(European, PA, Mexican, reservation))) 
+pred_svm <-predict(fit_svm,newdata=testing %>% select(-c(European, PA, Mexican, reservation)))
 
 # Random Forest
 library(randomForest)
-fit_rr<-randomForest(stars~.,data=training)
-pred_rr<-predict(fit_rr,newdata=testing)
+fit_rr<-randomForest(stars~.,data=training %>% select(-c(European, PA, Mexican, reservation)))
+pred_rr<-predict(fit_rr,newdata=testing %>% select(-c(European, PA, Mexican, reservation)))
 ```
 
 #RMSE
