@@ -1,0 +1,471 @@
+---
+title: "BIO 260 Final Project - Yelp Restaurant Success Prediction"
+output: html_document
+---
+
+# Data Wrangling
+
+Load our RData files.
+```{r}
+# set working directory
+# Loading RData
+library(dplyr)
+library(tidyr)
+
+
+y<-load("business.RData")
+rm(y)
+
+r <-load("review.RData")
+rm(r)
+```
+
+We check the format of each column in the data frame, and we find out that there are lists and data frame inside the data frame of business and review. For example, business categories is the list type, such as c("Chinese","Restaurants"), and attribute is a data frame. For the review data, the votes column is a data frame that consists of votes.funny, votes.useful, and votes.cool. 
+
+```{r}
+# Data wrangling
+lapply(business, class)
+lapply(review,class)
+```
+
+#Find all restaurants in QC and PA
+
+Because the business categories is the list, we could not apply the function filter in dplyr, we decided to find all the indexes of restaurants in PA and QC states. Then, we match restaurant index ID with business ID. We subset the business data frame with matching business restaurant ID. For the review data, we find review restaurant ID indexes by the matching business ID. Then, we filtered the review data frame by matching the review ID with the review restaurant indexes. 
+
+
+```{r}
+#table(business$state)
+
+#Filter Restaurants in categories and states PA,QC (states with more than 1000 restaurants)
+
+#getting the index
+business_restaurant_index <- which(grepl("Restaurants",business$categories) & business$state %in% c("QC","PA"))
+
+#getting business id by index
+business_restaurant_id <- business$business_id[business_restaurant_index]
+
+review_restaurant_index <- which(review$business_id %in% business_restaurant_id)
+
+review_restaurant_id <- review[review_restaurant_index,"review_id"]
+
+# Filter review by review_id
+review <- review[review$review_id %in% review_restaurant_id,]
+
+#Filter business by business_id
+business <-business[business$business_id %in% business_restaurant_id,] 
+```
+
+Specify some kind of foods and add them into dataset. 
+
+We wanted to create columns of binary variable for each food cuisine and fast food. The kind of food information is also contained in the business categories column of business data frame. Thus, we have to overcome with the trouble of filtering it. First, we added new columns of Mexican, Fastfood, American,Asian,and European into business data frame. Next, we created temporary dataframes, and looped through all lists in the business categories column. Then, we used ifelse function to check each condition and assign 1 or 0 to each temporary dataframe. Finally, we replaced the empty column with each column of the new dataframes. 
+
+```{r,message=F,warning=F}
+# Mexican, fast food, American, Asian, Europeans, Latin Americans
+
+business$Mexican=NA
+business$Fastfood=NA
+business$American=NA
+business$Asian=NA
+business$European=NA
+
+ff <- data.frame()
+mex <- data.frame()
+asia <- data.frame()
+america <- data.frame()
+european <- data.frame()
+
+for (i in 1:length(business$categories)){
+  ff<-rbind(ff,ifelse("Fast Food" %in% business$categories[[i]],1,0))
+  mex <- rbind(mex, ifelse("Mexican" %in% business$categories[[i]],1,0))
+  # asia <- rbind(asia,ifelse(c("Chinese","Japanese","Asian Fusion","Thai","Indian","Taiwanese","Vietnamese","Korean") %in% business$categories[[i]],1,0))
+  asia <- rbind(asia,ifelse("Chinese" %in% business$categories[[i]]|"Japanese" %in% business$categories[[i]]|"Asian Fusion" %in% business$categories[[i]]|"Thai" %in% business$categories[[i]]|"Indian" %in% business$categories[[i]]|"Taiwanese" %in% business$categories[[i]]|"Vietnamese" %in% business$categories[[i]]|"Korean" %in% business$categories[[i]],1,0))
+  america <- rbind(america,ifelse("American (New)" %in% business$categories[[i]]|"American (Traditional)" %in% business$categories[[i]],1,0))
+  # european<-rbind(european,ifelse(c("Italian","French","Irish","Greek","Austrian","British","German") %in% business$categories[[i]],1,0))
+   european <- rbind(european,ifelse("Italian" %in% business$categories[[i]]|"French" %in% business$categories[[i]]|"Irish" %in% business$categories[[i]]|"Greek" %in% business$categories[[i]]|"Austrian" %in% business$categories[[i]]|"British" %in% business$categories[[i]]|"German" %in% business$categories[[i]],1,0))
+}
+
+colnames(ff)[1]<- "Fastfood"
+colnames(asia)[1]<-"Asia"
+colnames(mex)[1] <- "Mexico"
+colnames(america)[1] <- "America"
+colnames(european)[1] <- "European"
+
+business$Fastfood <- ff$Fastfood
+business$Asian <-asia$Asia
+business$Mexican <-mex$Mexico
+business$American <- america$America
+business$European <-european$European
+
+rm(ff)
+rm(asia)
+rm(mex)
+rm(america)
+rm(european)
+```
+
+Count the number of features each restaurant has and sum them up. Add this new variable into the dataset.
+
+All features of interest are in the attributes column inside the business data frame. The attribute column is itself a data frame, so we also used similar approach of creating a temporary dataframe and then later replace the column with the empty column of feature in the business data frame. 
+
+```{r}
+#Attributes: wifi, smoking, reservation, delivery, parking, credit card, happy hour, take out, drive through
+business$feature <- NA
+
+#save all feature as a seperate data frame
+tempA <- data.frame()
+
+#reservation- false 11979, true 6042
+tempA <- ifelse(business$attributes$`Takes Reservations`==TRUE,1,0) %>% as.data.frame()
+colnames(tempA)[1]<- "reservation"
+
+#delivery- false 14543, true 3364
+tempA$delivery <- NA
+tempA$delivery <- ifelse(business$attributes$Delivery==TRUE,1,0)
+
+#credit card- false 397, true 18433
+tempA$card <- NA
+tempA$card <- ifelse(business$attributes$`Accepts Credit Cards`==TRUE,1,0)
+
+#happy hour- false 238, true 1569
+tempA$hh <- NA
+tempA$hh <- ifelse(business$attributes$`Happy Hour`==TRUE,1,0) ##A lot NA, may remove
+
+#take out- false 1385, true 16969
+tempA$takeout <- NA
+tempA$takeout <- ifelse(business$attributes$`Take-out`==TRUE,1,0)
+
+#drive thru- false 1486, true 1387
+tempA$drivethru <- NA
+tempA$drivethru <- ifelse(business$attributes$`Drive-Thru`==TRUE,1,0) ##A lot NA, may remove
+
+#Wifi- free 5224, no 8511, paid 118 - free+paid=1/no=0
+tempA$wifi <- NA
+tempA$wifi <- ifelse(business$attributes$`Wi-Fi`=="no",0,1) ##A lot NA
+
+#smoking- no 636, outdoor 783, yes 239 - outdoor+yes=1/no=0
+tempA$smoking <- NA
+tempA$smoking <- ifelse(business$attributes$Smoking=="no",0,1) ##A lot NA
+
+#parking- garage, street, validated, lot, valet - anyone returns true will be 1/otherwise 0
+tempA$parking <- NA
+tempA$parking <- ifelse(business$attributes$Parking$garage==TRUE|business$attributes$Parking$street==TRUE|business$attributes$Parking$validated==TRUE|business$attributes$Parking$lot==TRUE|business$attributes$Parking$valet==TRUE,1,0)
+
+#Deal with NAs (replace NA to 0)
+tempA <- tempA %>% replace_na(list(reservation=0, delivery=0, card=0, hh=0, takeout=0, drivethru=0, wifi=0, smoking=0, parking=0))
+
+#Sum up to features
+tempA <- mutate(tempA, feature = reservation + delivery + card + hh + takeout + drivethru + wifi + smoking + parking)
+
+business$feature <- tempA$feature
+
+rm(tempA)
+```
+
+Add some attributes from review dataset, including number of votes funny, useful, and cool
+
+We used group by and sum up the number of votes funny, useful, and cool of each business ID in the review data frame. We selected only columns that contain potential predictor in our model in the business data to delete and clean up other columns of list and data frame type in business. We called the new data frame is business_data. Then, we joined the new data frame with columns of votes funny, useful, and cool from the review data.  
+
+```{r, message=F,warning=F}
+# select some columns of review and make it not a data.frame
+tempB <- review%>%select(business_id,stars)
+tempB <- tempB%>%mutate(vote_funny=review$votes$funny,
+                        vote_useful=review$votes$useful,
+                        vote_cool=review$votes$cool)
+#group_by business 
+r<-tempB%>%
+  group_by(business_id)%>%
+  summarise(votes_funny=sum(vote_funny),
+            votes_useful=sum(vote_useful), 
+            votes_cool=sum(vote_cool))
+rm(tempB)
+
+# select columns in business
+business_data <- business%>%
+  select(business_id,full_address,city,review_count,
+         state,stars,feature, Mexican, American, Fastfood, European, Asian)
+
+
+
+#left_join the review columns with the business file 
+business_data <- left_join(business_data,r,by="business_id")
+
+
+#separate the zip code
+business_data <- business_data %>% separate(full_address, c("address", "state_zc"), sep = ", ")
+business_data <- business_data %>% separate(state_zc, c("st", "zip_code"), sep = "\\ ")
+business_data <- business_data %>% select(-c(st,address,city))
+
+#zip code? 
+```
+
+Add some text analysis from review data and finalize data wrangling part.
+
+we used the library tidytext to tokenize words from the review text column for each business ID. Then, we also matched these word with the sentiments to find positive and negative words. We calculated the positivity of review text based on the number of positive and negative words. Last, we joined the column of positivity into the data frame business_data. The positivity is one of the potential predictors in our predictive model. 
+
+We changed the state into binary variable of whether each business ID belongs to the state PA or QC. We deleted the business ID column in order to build predictive models with other features. 
+
+```{r}
+library(tidytext)
+
+review_text<-review %>%
+    select(business_id, text, stars)%>%
+    unnest_tokens(word, text)%>%
+    filter(!word %in% stop_words$word)
+
+nrc <- sentiments %>%
+    filter(lexicon == "nrc") %>%
+    select(word, sentiment)
+
+review_sentiment <- review_text %>%
+    inner_join(nrc) %>%
+     count(business_id,sentiment)%>%
+    spread(sentiment, n, fill = 0) %>%
+    mutate(positivity = (positive - negative) / (positive + negative + 1))
+
+# join with business_data
+# use positivity
+business_data <- review_sentiment%>%
+  select(c(business_id,positivity))%>%
+  left_join(business_data,by="business_id")
+
+# state
+business_data<- business_data%>%
+  mutate(PA=ifelse(state=="PA",1,0))
+
+business_data <- business_data%>%
+  select(-c(zip_code))
+
+
+business_data <- subset(business_data, select = -c(business_id) )
+```  
+
+# Exploratory Analysis (Plots)
+
+We created plots to explore and visualize the effect of some features on star rating. First, we would like to examined how difference in the text review of star rating of 1 versus star rating of 5. Second, we explored the review count distribution of each star categories for PA versus QC.Next, we also created the density plot to visualize the distribution of positivity of each star category for two states. Last, we also to see if the maximum number of features affect the star rating of restaurants. 
+
+```{r}
+# exploratory analysis
+
+library(caret)
+library(wordcloud)
+library(ggplot2)
+library(easyGgplot2)
+
+#word cloud by filtered 1-star yelp review/ 5-star yelp review (in review data)
+
+common_1star <- review_text %>%
+                  filter(stars==1) %>% count(word, sort = TRUE) %>% filter(n > 500)
+pal1 <- brewer.pal(5, "RdPu")
+pal1 <- pal1[-(1:2)]
+wordcloud(common_1star$word, common_1star$n, colors = pal1, scale=c(12,.3))
+
+common_5star <- review_text %>%
+                  filter(stars==5) %>% count(word, sort = TRUE) %>% filter(n > 1000)
+pal2 <- brewer.pal(5, "YlGn")
+pal2 <- pal2[-(1:2)]
+wordcloud(common_5star$word, common_5star$n, colors = pal2, scale=c(12,.3))
+
+#review_count vs. stars/ positivity vs. stars
+ggplot2.histogram(data=business_data1, xName='positivity',
+        groupName='stars', legendPosition="top",
+        alpha=0.5, addDensityCurve=TRUE, scale=density) + facet_wrap(~state)
+
+ggplot2.barplot(data=business_data, xName='stars',yName='log10(review_count)', groupName = 'stars') + facet_wrap(~state)
+
+#Max number of features vs. stars
+max <- business_data %>% group_by(stars) %>% summarise(maxFeature = max(feature))
+ggplot2.lineplot(data=max, xName='stars', yName='maxFeature', groupName = 'stars')
+ggplot(max, aes(stars, maxFeature, color=stars)) + geom_point() + geom_line()
+
+
+#http://colorbrewer2.org/ 
+```
+
+
+# Cross validation
+
+We divided the data into training and testing sets, with 80% of the data for training and 20% for testing. We used the training set to build the predictive models and evaluated the model with the testing set. 
+
+```{r}
+# cross validation
+library(caret)
+#delete the orginal state column
+business_data <- business_data %>% select(-c(state))
+
+# create train set and test set with 80% in train and 20% in test
+inTrain <- createDataPartition(y = business_data$stars, p=0.8)
+training <- slice(business_data, inTrain$Resample1)
+testing <- slice(business_data, -inTrain$Resample1)
+
+#run 10 cross validations leaving out 20% of the data
+control <- trainControl(method='cv', number=10, p=.8) 
+```
+
+# Fitting different models
+
+### GLM (Logistic Regression)
+```{r}
+# GLM (Logistic Regression)
+
+fit1 <- glm(y~., data=mutate(training,
+                                   y=stars==1),family="binomial")
+fit2 <- glm(y~., data=mutate(training,
+                                   y=stars==1.5),family="binomial")
+fit3 <- glm(y~., data=mutate(training,
+                                   y=stars==2),family="binomial")
+fit4 <- glm(y~., data=mutate(training,
+                                   y=stars==2.5),family="binomial")
+fit5<- glm(y~., data=mutate(training,
+                                   y=stars==3),family="binomial")
+fit6 <- glm(y~., data=mutate(training,
+                                   y=stars==3.5),family="binomial")
+fit7 <- glm(y~., data=mutate(training,
+                                   y=stars==4),family="binomial")
+fit8 <- glm(y~., data=mutate(training,
+                                   y=stars==4.5),family="binomial")
+fit9 <- glm(y~., data=mutate(training,
+                                   y=stars==5),family="binomial")
+
+
+f_hat1 <- predict(fit1, newdata = testing, type = "response")
+f_hat2 <- predict(fit2, newdata = testing, type ="response")
+f_hat3 <- predict(fit3, newdata = testing, type = "response")
+f_hat4 <- predict(fit4, newdata = testing, type ="response")
+f_hat5 <- predict(fit5, newdata = testing, type = "response")
+f_hat6 <- predict(fit6, newdata = testing, type ="response")
+f_hat7 <- predict(fit7, newdata = testing, type = "response")
+f_hat8 <- predict(fit8, newdata = testing, type ="response")
+f_hat9 <- predict(fit9, newdata = testing, type = "response")
+ 
+
+pred_glm <- 
+  apply(cbind(f_hat1, f_hat2, f_hat3,f_hat4,f_hat5,f_hat6,f_hat7,f_hat8,f_hat9),1,which.max)
+```
+
+### Linear model
+```{r}
+# fit business_data without change of stars
+#fitting lm
+# ask about price variable, missing value
+library(broom)
+
+#remove states in business_data
+#data<-training%>%select(-c(state))
+
+res_lm1 <- training%>%
+  lm(stars ~ ., data = .)
+
+summary(res_lm1)
+
+#remove PA
+res_lm2 <- training%>%
+  lm(stars ~ positivity + review_count + feature + Mexican + American + Fastfood + European + Asian + votes_funny + votes_useful + votes_cool, data = .)
+
+summary(res_lm2) 
+
+#remove votes_usefull
+res_lm3 <- training%>%
+  lm(stars ~positivity + review_count + feature + Mexican + American + Fastfood + European+ Asian + votes_funny + votes_cool, data = .)
+
+summary(res_lm3) #remove fast food 
+
+#remove European
+res_lm4 <- training%>%
+  lm(stars ~positivity + review_count + feature  + Mexican + American + Fastfood+ Asian + votes_funny + votes_cool, data = .)
+summary(res_lm4) #remove feature
+
+#remove Mexican
+res_lm5 <- training%>%
+  lm(stars ~positivity + review_count + feature + American + Fastfood+ Asian + votes_funny + votes_cool, data = .)
+summary(res_lm5)
+
+#RMSE = SD/(1-R^2)
+rmse_lm <- 0.6164*sqrt(1-0.2795^2) #0.59
+
+#backward selection, remove the high non-significant, and then do again until getting all significant
+```
+
+### KNN
+```{r}
+#KNN
+res <- train(as.factor(stars) ~ .,
+             data = training,
+             method = "knn",
+             trControl = control,
+             tuneLength = 1, # How fine a mesh to go on grid
+             tuneGrid=data.frame(k=seq(1,20,2)),
+             metric="Accuracy")
+
+plot(res)
+
+res$results %>% 
+  ggplot(aes(k, Accuracy, ymin= Accuracy - AccuracySD, 
+             ymax = Accuracy + AccuracySD)) +
+  geom_point() + geom_errorbar()
+res
+# fit with k=19
+fit <- knn3(stars~., data=training, k=19)
+f_hat <- predict(fit, newdata = testing)
+pred_knn_19 <- apply(f_hat,1,which.max)
+
+
+
+```
+
+### SVM
+```{r}
+#SVM
+#install.packages("e1071")
+
+library(e1071)
+fit_svm <- svm(stars~.,data=training) 
+pred_svm <-predict(fit_svm,newdata=testing)
+
+# Random Forest
+library(randomForest)
+fit_rr<-randomForest(stars~.,data=training)
+pred_rr<-predict(fit_rr,newdata=testing)
+```
+
+#RMSE
+```{r}
+RMSE <- function(true_ratings, predicted_ratings){
+    sqrt(mean((true_ratings - predicted_ratings)^2))
+}
+
+rmse_glm <- RMSE(testing$stars,pred_glm)
+rmse_glm 
+
+rmse_knn_19<- RMSE(testing$stars,pred_knn_19)
+rmse_knn_19 
+
+rmse_svm <- RMSE(testing$stars,pred_svm)
+rmse_svm 
+
+rmse_rr <- RMSE(testing$stars,pred_rr)
+rmse_rr 
+```
+
+#Table of RMSE Comparison
+```{r}
+library(knitr)
+rmse_results <- data_frame(method = "Logistic Regression", RMSE = rmse_glm)
+
+rmse_results <- bind_rows(rmse_results, data_frame(method = "Linear Regression", RMSE = rmse_lm))
+
+rmse_results <- bind_rows(rmse_results,
+                          data_frame(method="K Nearest Neighbors",  
+                                     RMSE = rmse_knn_19 ))
+
+rmse_results <- bind_rows(rmse_results,
+                          data_frame(method="Support Vector Machine",  
+                                     RMSE = rmse_svm ))
+
+rmse_results <- bind_rows(rmse_results,
+                          data_frame(method="Random Forest",  
+                                     RMSE = rmse_rr ))
+
+
+rmse_results%>%kable
+```
+
