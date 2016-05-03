@@ -1,0 +1,38 @@
+---
+title: "BIO 260 Final Project - Yelp Restaurant Success Prediction - Convert JSON file to R data"
+author: "Elena Phuong Dang, Shengyao Jiang, Ming Liu"
+output: html_document
+---
+
+This is the code for converting the original JSON file from [Yelp dataset challenge website](https://www.yelp.com/dataset_challenge) to the .RData file that we used to do analysis in our project. 
+
+# Accessing data
+* [Original business data JSON file](https://www.dropbox.com/sh/nnfth7aqy5sfzc3/AACI90MHBGRSEOzqddT0Bsa0a/yelp_academic_dataset_business.json?dl=0).
+
+* [Original review data JSON file](https://www.dropbox.com/sh/nnfth7aqy5sfzc3/AADf6QbvzVK7STvPBlAYXBcQa/yelp_academic_dataset_review.json?dl=0).
+
+### Convert the JSON file into RData file
+```{r}
+install.packages("jsonlite")
+library(jsonlite)
+require(jsonlite)
+
+business.file <- 'C:/Users/Phuong/Documents/R/Bio 260/yelp_dataset_challenge_academic_dataset/yelp_academic_dataset_business.json'
+
+business <- stream_in(file(business.file))
+
+save(business,file='C:/Users/Phuong/Documents/R/Bio 260/business.RData')
+
+#rm(business)
+```
+
+```{r}
+review.file <- 'C:/Users/Phuong/Documents/R/Bio 260/yelp_dataset_challenge_academic_dataset/yelp_academic_dataset_review.json'
+
+review <- stream_in(file(review.file))
+
+save(review,file='C:/Users/Phuong/Documents/R/Bio 260/review.RData')
+
+#rm(review)
+```
+
