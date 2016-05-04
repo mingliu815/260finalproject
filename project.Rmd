@@ -432,7 +432,7 @@ pred_glm <-
 
 Another model that we try is the K Nearest Neighbors model. We use cross validation to select the best k first, and we find out that k=19 is the best value. We fit the model using k=19. 
 
-_Due to the random spliting training dataset and testing dataset, the best K value would be changed every time.Here we just use the K=19._
+_Due to the random spliting training dataset and testing dataset, the best K value would be changed every time. Here we just use the K=19._
 
 ```{r}
 #KNN
