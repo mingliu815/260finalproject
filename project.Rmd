@@ -17,7 +17,7 @@ output: html_document
 
 With the development of mobile devices and internet, the effects of social networks has grown increasingly in recent years. We would like to use real world data from social network applications to investigate interesting things in our daily life. We love to explore good food around us in our spare time and used to use Yelp as a searching engine for restaurants. Actually, more and more people use Yelp as a consumer reviews site for finding out top recommendations of restaurants and other services. Thus, we decide to use data from Yelp to predict the success of restaurants. In this project, we included only the restaurants in Pennsylvania (PA) and Quebec (QC) states because we want to compare two states in the North East of America and Canada. We want to study this data and explore the insights of restaurants’ success near us. 
 
-# Investigating Questions:
+# Investigating Questions
 
 * What features are assiocated with the ratings of the restaurants?
 
@@ -36,6 +36,12 @@ With the development of mobile devices and internet, the effects of social netwo
 
 * What is the best model to predict the success of the restaurants?
 
+
+# Related work
+
+We have discussed exploratory analysis, statistical regression analysis, text analysis, and drawing maps to show distributions in class. These are all helpful and included in our project. 
+
+
 > Let's start our project from data wrangling.
 
 # Data Wrangling
@@ -47,14 +53,14 @@ Load our RData files.
 library(dplyr)
 library(tidyr)
 
-y<-load("business.RData")
+y<-load("/Users/mingliu/Downloads/business.RData")
 rm(y)
 
-r <-load("review.RData")
+r <-load("/Users/mingliu/Downloads/review.RData")
 rm(r)
 ```
 
-We check the format of each column in the data frame, and we find out that there are lists and data frame inside the data frame of business and review. For example, business categories is the list type, such as c("Chinese","Restaurants"), and attribute is a data frame. For the review data, the votes column is a data frame that consists of votes.funny, votes.useful, and votes.cool. 
+We check the format of each column in the data frame, and we find out that there are lists and data frame inside the data frame of business and review. For example, business categories is in list type, such as c("Chinese","Restaurants"), and attribute is a data frame. For the review data, the votes column is a data frame that consists of votes.funny, votes.useful, and votes.cool. 
 
 ```{r}
 # Data wrangling
@@ -64,7 +70,7 @@ lapply(review,class)
 
 ### Find all restaurants in QC and PA
 
-Because the business categories is the list, we could not apply the function filter in dplyr, we decided to find all the indexes of restaurants in PA and QC states. Then, we match restaurant index ID with business ID. We subset the business data frame with matching business restaurant ID. For the review data, we find review restaurant ID indexes by the matching business ID. Then, we filtered the review data frame by matching the review ID with the review restaurant indexes. 
+Because the business categories are in a list, we could not apply the function filter in dplyr, we decide to find all the indexes of restaurants in PA and QC states. Then, we match restaurant index ID with business ID. We subset the business data frame with matching business restaurant ID. For the review data, we find review restaurant ID indexes by the matching business ID. Then, we filter the review data frame by matching the review ID with the review restaurant indexes. 
 
 
 ```{r}
@@ -128,7 +134,7 @@ montreal
 
 Now we specify some kind of foods and add them into dataset. 
 
-We want to create columns of binary variable for each food cuisine and fast food. The kind of food information is also contained in the business categories column of business data frame. Thus, we have to overcome with the trouble of filtering it. First, we add new columns of Mexican, Fastfood, American,Asian,and European into business data frame. Next, we creat temporary dataframes, and loop through all lists in the business categories column. Then, we use ifelse function to check each condition and assign 1 or 0 to each temporary dataframe. Finally, we replace the empty column with each column of the new dataframes. 
+We want to create columns of binary variable for each food cuisine and fast food. The kind of food information is also contained in the business categories column of business data frame. Thus, we have to overcome with the trouble of filtering it. First, we add new columns of Mexican, Fastfood, American, Asian and European into business data frame. Next, we create temporary dataframes, and loop through all lists in the business categories column. Then, we use ifelse function to check each condition and assign 1 or 0 to each temporary dataframe. Finally, we replace the empty column with each column of the new dataframes. 
 
 ```{r,message=F,warning=F}
 # Mexican, fast food, American, Asian, Europeans, Latin Americans
@@ -174,7 +180,7 @@ rm(european)
 
 Here we add columns of features into the business data frame. 
 
-All features of interest are in the attributes column inside the business data frame. We select reservation, delivery, card, takeout and parking. There are some other potential features and amenities that can affect the star rating. However, they are a lot of missing values, so we decide to filter them out. 
+All features of interest are in the attributes column inside the business data frame. We select reservation, delivery, card, takeout and parking. There are some other potential features and amenities that can effect the star rating. However, they are a lot of missing values, so we decide to filter them out. 
 
 The attribute column is itself a data frame, so we also use similar approach of creating a temporary dataframe and then later replace the column with the empty column of each feature in the business data frame. They are binary variable, and we replace some NA values with zero. 
 
@@ -250,9 +256,9 @@ business_data <- left_join(business_data,r,by="business_id")
 
 Now we add some text analysis from review data and finalize data wrangling part.
 
-We use the library tidytext to tokenize words from the review text column for each business ID. Then, we also match these word with the sentiments to find positive and negative words. We calculat the positivity of review text based on the number of positive and negative words. Last, we join the column of positivity into the data frame business_data. The positivity is one of the potential predictors in our predictive model. 
+We use the library tidytext to tokenize words from the review text column for each business ID. Then, we match these word with the sentiments to find positive and negative words. We calculate the positivity of review text based on the number of positive and negative words. Last, we join the column of positivity into the data frame business_data. The positivity is one of the potential predictors in our predictive model. 
 
-We chang the state into binary variable of whether each business ID belongs to the state PA or QC. We delet the business ID column in order to build predictive models with other features. 
+We change the state into binary variable of whether each business ID belongs to the state PA or QC. We delete the business ID column in order to build predictive models with other features. 
 
 ```{r}
 library(tidytext)
@@ -289,7 +295,7 @@ business_data <- subset(business_data, select = -c(business_id) )
 
 # Exploratory Analysis (Plots)
 
-We creat plots to explore and visualize the effect of some features on star rating. First, we would like to examine how difference in the text review of star rating of 1 versus star rating of 5. Second, we explore the review count distribution of each star categories for PA versus QC. We also create the density plot to visualize the distribution of positivity of each star category for two states. 
+We create plots to explore and visualize the effect of some features on star rating. First, we would like to examine how difference in the text review of star rating of 1 versus star rating of 5. In addition, we explore the review count distribution of each star categories for PA versus QC. We also create the density plot to visualize the distribution of positivity of each star category for two states. 
 
 ```{r,message=F,warning=F,echo=F}
 # exploratory analysis
@@ -384,11 +390,11 @@ rmse_lm <- 0.6114*sqrt(1-0.3027) #0.51
 
 ```
 
-Based on the result of the backward selection in linear regression model, we leave out four variables. They are European, PA, Mexican, and reservation. 
+Based on the result of the backward selection in linear regression model, we leave out four variables: European, PA, Mexican, and reservation. 
 
 ### GLM (Logistic Regression)
 
-We fit other models using the selected variables from the result of backward selection. The first model is logistic regression. 
+We fit other models using the selected variables from the result of backward selection. The first model is logistic regression for each categories of the stars. 
 
 ```{r,message=F,warning=F}
 # GLM (Logistic Regression)
@@ -538,7 +544,7 @@ _American food, fast food, and Asian food are more related to the success of the
 
 * Does the location of states effect the ratings of the restaurants?
 
-_Not really._
+_Not really, probably because the data here are almost all from the big cities. If we have information on rural area, the results might reach the different._
 
 * What are the specific amenities that more related to the stars of the restaurants?
 
@@ -551,3 +557,8 @@ _The more positivity of the review text, the higher ratings of the restaurants._
 * What is the best model to predict the success of the restaurants?
 
 _By comparing the RMSE, we found out that the linear model outperforms other models._
+
+### Improvement
+
+Basically we successfully investigated our initial questions and reached our goal in this project, while there could be some improvements. First of all, this dataset has a lot of missing values, especially for some features that we think they should be included as the potential variables, such as price range, free wifi or not. In this project, we did not use them at all, while we believe that they would give us more information if we got these values and included them correctly. Furthermore, the location distribution of these restaurants are skewed, and almost all of them are in urban areas (big cities). We think that if we could have more information on rural or other different areas we could glean more insights than what is avaliable on Yelp. 
+
