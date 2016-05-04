@@ -89,6 +89,8 @@ review <- review[review$review_id %in% review_restaurant_id,]
 business <-business[business$business_id %in% business_restaurant_id,] 
 ```
 
+### Maps of two states
+
 Before we wrangle more variables, we want to see what the location distributions of the restaurants in this two states. Now we show the restaurants distribution on the maps for PA and QC, and find out that almost all the restaurants in Yelp dataset are around Pittsburgh, the second largest city in Pennsylvania, and Montreal, the largest city in Quebec. We can conclude that there are more restaurants in the big cities, and people are in the large cities would more likely to give the ratings and share their comments on the Yelp.
 
 ```{r}
@@ -120,6 +122,9 @@ montreal <- ggmap(mapMont)+
 #ggsave("montreal.png", montreal)
 montreal
 ```
+
+
+### Select and wrangle variables
 
 Now we specify some kind of foods and add them into dataset. 
 
